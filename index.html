@@ -3,191 +3,326 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MiresHabar - Мессенджер</title>
+  <title>MX Messenger</title>
   
   <!-- PWA Configuration -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="MiresHabar">
-  <meta name="theme-color" content="#6a1b9a">
+  <meta name="theme-color" content="#2d0b47">
   <link rel="manifest" href="./manifest.json">
-  <link rel="apple-touch-icon" href="./images/180.png">
+  <link rel="apple-touch-icon" href="./icons/icon-180x180.png">
   
   <style>
     :root {
-      --primary: #6a1b9a;
-      --primary-dark: #4a148c;
-      --primary-light: #9c27b0;
-      --accent: #ff9800;
+      --primary: #2d0b47;
+      --primary-dark: #1a052e;
+      --primary-light: #4a1a6e;
+      --accent: #8a5cf5;
       --text: #ffffff;
-      --bg: #121212;
-      --card-bg: #1e1e1e;
+      --text-secondary: #b8b8b8;
+      --bg: #0f051d;
+      --card-bg: #1a0a2d;
+      --bubble-user: #4a1a6e;
+      --bubble-other: #2e1a4a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
     }
 
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
       background: var(--bg);
       color: var(--text);
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
+      height: 100vh;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
 
-    #app {
-      max-width: 800px;
-      margin: 0 auto;
+    /* Header Styles */
+    header {
+      background: var(--primary);
+      padding: 15px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      z-index: 10;
+      position: relative;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+    }
+
+    .logo-text {
+      font-size: 24px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #ffffff, #c9b2f0);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: 1px;
+    }
+
+    .tea-cup {
+      width: 24px;
+      height: 24px;
+      position: relative;
+      margin-top: 8px;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .cup {
       width: 100%;
-      padding: 20px;
+      height: 80%;
+      background: #f3e5f5;
+      border-radius: 0 0 8px 8px;
+      position: relative;
+    }
+
+    .cup:before {
+      content: '';
+      position: absolute;
+      width: 60%;
+      height: 60%;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      top: 20%;
+      left: 20%;
+    }
+
+    .steam {
+      position: absolute;
+      width: 4px;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 5px;
+      animation: steam 2s infinite ease-out;
+    }
+
+    .steam:nth-child(1) {
+      top: -10px;
+      left: 5px;
+      animation-delay: 0.2s;
+    }
+
+    .steam:nth-child(2) {
+      top: -14px;
+      left: 12px;
+      animation-delay: 0.5s;
+    }
+
+    .steam:nth-child(3) {
+      top: -10px;
+      left: 19px;
+      animation-delay: 0.1s;
+    }
+
+    /* Animations */
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-5px); }
+    }
+
+    @keyframes steam {
+      0% { transform: translateY(0) scale(1); opacity: 0.6; }
+      100% { transform: translateY(-10px) scale(1.2); opacity: 0; }
+    }
+
+    @keyframes messageIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes sendAnimation {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+
+    /* Main Chat Area */
+    #chat-container {
       flex: 1;
       display: flex;
       flex-direction: column;
+      overflow: hidden;
     }
-
-    header {
-      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      text-align: center;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-
-    h1 {
-      margin: 0;
-      font-size: 1.8rem;
-      color: white;
-    }
-
-    #status {
-      padding: 12px;
-      border-radius: 8px;
-      margin-bottom: 15px;
-      text-align: center;
-      font-weight: bold;
-    }
-
-    .online { background: rgba(46, 125, 50, 0.2); color: #a5d6a7; }
-    .offline { background: rgba(198, 40, 40, 0.2); color: #ef9a9a; }
-    .loading { background: rgba(255, 167, 38, 0.2); color: #ffe0b2; }
 
     #messages {
       flex: 1;
       overflow-y: auto;
-      background: var(--card-bg);
-      border-radius: 12px;
       padding: 15px;
-      margin-bottom: 15px;
       display: flex;
       flex-direction: column;
       gap: 12px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent) transparent;
     }
 
+    #messages::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    #messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    #messages::-webkit-scrollbar-thumb {
+      background-color: var(--accent);
+      border-radius: 3px;
+    }
+
+    /* Message Bubbles */
     .message {
-      background: rgba(106, 27, 154, 0.3);
+      max-width: 80%;
       padding: 12px 16px;
-      border-radius: 8px;
-      border-left: 4px solid var(--accent);
-      animation: fadeIn 0.3s ease;
+      border-radius: 18px;
+      animation: messageIn 0.3s ease-out;
+      position: relative;
+      word-break: break-word;
+      line-height: 1.4;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(5px); }
-      to { opacity: 1; transform: translateY(0); }
+    .user-message {
+      align-self: flex-end;
+      background: var(--bubble-user);
+      color: white;
+      border-bottom-right-radius: 4px;
     }
 
-    .message-header {
+    .other-message {
+      align-self: flex-start;
+      background: var(--bubble-other);
+      color: var(--text);
+      border-bottom-left-radius: 4px;
+    }
+
+    .message-info {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 6px;
-      font-size: 0.9rem;
+      margin-top: 4px;
+      font-size: 0.75rem;
+      opacity: 0.8;
     }
 
-    .username {
-      font-weight: bold;
-      color: var(--accent);
-    }
-
-    .timestamp {
-      color: rgba(255,255,255,0.6);
-      font-size: 0.8rem;
-    }
-
-    #messageForm {
+    /* Input Area */
+    #message-form {
       display: flex;
-      gap: 10px;
-      margin-top: auto;
+      padding: 12px;
+      background: var(--primary-dark);
+      border-top: 1px solid rgba(255,255,255,0.1);
     }
 
-    #messageInput {
+    #message-input {
       flex: 1;
-      padding: 14px;
+      padding: 12px 16px;
       border: none;
-      border-radius: 8px;
+      border-radius: 24px;
       background: var(--card-bg);
-      color: white;
+      color: var(--text);
       font-size: 1rem;
+      outline: none;
+      transition: all 0.2s;
     }
 
-    #messageInput:focus {
-      outline: 2px solid var(--accent);
+    #message-input:focus {
+      box-shadow: 0 0 0 2px var(--accent);
     }
 
-    #sendButton {
-      background: var(--primary);
-      color: white;
+    #send-button {
+      width: 48px;
+      height: 48px;
+      margin-left: 10px;
       border: none;
-      border-radius: 8px;
-      padding: 0 24px;
-      font-weight: bold;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
       transition: all 0.2s;
     }
 
-    #sendButton:hover {
-      background: var(--primary-light);
+    #send-button:hover {
+      background: #9a71ff;
+      transform: translateY(-2px);
     }
 
-    #sendButton:disabled {
+    #send-button:disabled {
       background: #555;
       cursor: not-allowed;
+      transform: none;
     }
 
-    /* Mobile styles */
+    /* Status Indicator */
+    #status {
+      padding: 8px 12px;
+      border-radius: 16px;
+      font-size: 0.8rem;
+      text-align: center;
+      margin: 0 15px 15px;
+      align-self: center;
+      background: rgba(0,0,0,0.3);
+    }
+
+    .online { color: #7aff7a; }
+    .offline { color: #ff7a7a; }
+    .connecting { color: #fffa7a; }
+
+    /* Mobile Optimizations */
     @media (max-width: 600px) {
-      #app {
-        padding: 12px;
+      .logo-text {
+        font-size: 20px;
       }
       
-      header {
-        padding: 16px;
+      #message-form {
+        padding: 8px;
       }
       
-      #messageForm {
-        flex-direction: column;
+      #message-input {
+        padding: 10px 14px;
       }
       
-      #sendButton {
-        padding: 12px;
-        width: 100%;
+      #send-button {
+        width: 42px;
+        height: 42px;
       }
     }
   </style>
 </head>
 <body>
-  <div id="app">
+  <div id="chat-container">
     <header>
-      <h1>MiresHabar</h1>
+      <div class="logo">
+        <div class="logo-text">MX</div>
+        <div class="tea-cup">
+          <div class="cup"></div>
+          <div class="steam"></div>
+          <div class="steam"></div>
+          <div class="steam"></div>
+        </div>
+      </div>
+      <div id="status" class="connecting">Подключение...</div>
     </header>
 
-    <div id="status" class="loading">Подключение к серверу...</div>
-    
     <div id="messages"></div>
     
-    <form id="messageForm">
-      <input type="text" id="messageInput" placeholder="Напишите сообщение..." required>
-      <button type="submit" id="sendButton" disabled>Отправить</button>
+    <form id="message-form">
+      <input type="text" id="message-input" placeholder="Написать сообщение..." autocomplete="off" required>
+      <button type="submit" id="send-button" disabled>
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
     </form>
   </div>
 
@@ -211,116 +346,151 @@
 
     // Initialize Firebase
     try {
-      // Initialize Firebase
       firebase.initializeApp(firebaseConfig);
-      console.log("Firebase initialized");
-      
       const auth = firebase.auth();
       const database = firebase.database();
       
-      // Get UI elements
+      // DOM elements
       const messagesDiv = document.getElementById('messages');
-      const messageForm = document.getElementById('messageForm');
-      const messageInput = document.getElementById('messageInput');
-      const sendButton = document.getElementById('sendButton');
+      const messageForm = document.getElementById('message-form');
+      const messageInput = document.getElementById('message-input');
+      const sendButton = document.getElementById('send-button');
       const statusDiv = document.getElementById('status');
+      const chatContainer = document.getElementById('chat-container');
 
-      // Update connection status
+      // Update status
       function updateStatus(text, status) {
         statusDiv.textContent = text;
         statusDiv.className = status;
       }
 
-      // Format timestamp
+      // Format time
       function formatTime(timestamp) {
         if (!timestamp) return '';
         const date = new Date(timestamp);
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       }
 
+      // Create message element
+      function createMessage(text, isUser, timestamp, username) {
+        const message = document.createElement('div');
+        message.className = `message ${isUser ? 'user-message' : 'other-message'}`;
+        
+        message.innerHTML = `
+          <div class="message-text">${text}</div>
+          <div class="message-info">
+            <span>${username || (isUser ? 'Вы' : 'Гость')}</span>
+            <span>${formatTime(timestamp)}</span>
+          </div>
+        `;
+        
+        return message;
+      }
+
+      // Smooth scroll to bottom
+      function scrollToBottom() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+
       // Sign in anonymously
       auth.signInAnonymously()
         .then((userCredential) => {
-          console.log("Signed in anonymously");
-          updateStatus("✓ Подключено к серверу", "online");
+          updateStatus("В сети", "online");
           sendButton.disabled = false;
           messageInput.focus();
+          
+          const userId = userCredential.user.uid;
+          const username = `Гость_${userId.slice(0, 4)}`;
           
           // Listen for new messages
           database.ref('messages')
             .orderByChild('timestamp')
-            .limitToLast(50)
+            .limitToLast(100)
             .on('child_added', (snapshot) => {
               const message = snapshot.val();
-              displayMessage(message);
+              const isUser = message.userId === userId;
+              
+              const messageElement = createMessage(
+                message.text, 
+                isUser,
+                message.timestamp,
+                message.username
+              );
+              
+              messagesDiv.appendChild(messageElement);
+              scrollToBottom();
             });
+
+          // Send message
+          messageForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const messageText = messageInput.value.trim();
+            if (!messageText) return;
+            
+            try {
+              sendButton.disabled = true;
+              sendButton.innerHTML = `
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 2V6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M12 18V22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M4.93 4.93L7.76 7.76" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M16.24 16.24L19.07 19.07" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M2 12H6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M18 12H22" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M4.93 19.07L7.76 16.24" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M16.24 7.76L19.07 4.93" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              `;
+              
+              // Animation
+              sendButton.style.animation = 'sendAnimation 0.3s ease';
+              setTimeout(() => {
+                sendButton.style.animation = '';
+                sendButton.innerHTML = `
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M22 2L11 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                `;
+              }, 300);
+              
+              await database.ref('messages').push({
+                text: messageText,
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                userId: userId,
+                username: username
+              });
+              
+              messageInput.value = '';
+            } catch (error) {
+              console.error("Send error:", error);
+              updateStatus("Ошибка отправки", "offline");
+            } finally {
+              sendButton.disabled = false;
+            }
+          });
         })
         .catch((error) => {
           console.error("Auth error:", error);
-          updateStatus("✗ Ошибка подключения", "offline");
+          updateStatus("Оффлайн", "offline");
         });
 
-      // Display a message
-      function displayMessage(message) {
-        const messageElement = document.createElement('div');
-        messageElement.className = 'message';
-        messageElement.innerHTML = `
-          <div class="message-header">
-            <span class="username">${message.username || 'Гость'}</span>
-            <span class="timestamp">${formatTime(message.timestamp)}</span>
-          </div>
-          <div class="message-text">${message.text}</div>
-        `;
-        messagesDiv.appendChild(messageElement);
-        messagesDiv.scrollTop = messagesDiv.scrollHeight;
-      }
-
-      // Send message handler
-      messageForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const messageText = messageInput.value.trim();
-        if (!messageText) return;
-        
-        try {
-          sendButton.disabled = true;
-          
-          // Check auth
-          if (!auth.currentUser) {
-            await auth.signInAnonymously();
-          }
-          
-          // Send message
-          await database.ref('messages').push({
-            text: messageText,
-            timestamp: firebase.database.ServerValue.TIMESTAMP,
-            userId: auth.currentUser.uid,
-            username: `Гость_${auth.currentUser.uid.slice(0, 4)}`
-          });
-          
-          messageInput.value = '';
-        } catch (error) {
-          console.error("Send error:", error);
-          updateStatus("✗ Ошибка отправки", "offline");
-        } finally {
-          sendButton.disabled = false;
-        }
-      });
-
-      // Monitor connection status
+      // Connection monitoring
       database.ref('.info/connected').on('value', (snapshot) => {
         if (snapshot.val() === true) {
-          updateStatus("✓ Подключено к серверу", "online");
+          updateStatus("В сети", "online");
           sendButton.disabled = false;
         } else {
-          updateStatus("⌛ Нет соединения", "offline");
+          updateStatus("Подключение...", "connecting");
           sendButton.disabled = true;
         }
       });
 
     } catch (error) {
       console.error("Initialization error:", error);
-      document.getElementById('status').textContent = "Ошибка инициализации";
+      statusDiv.textContent = "Ошибка инициализации";
+      statusDiv.className = "offline";
     }
   </script>
 </body>
