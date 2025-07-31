@@ -12,27 +12,321 @@
   <meta name="theme-color" content="#6a1b9a">
   <meta name="description" content="Мессенджер MiresHabar">
   
-  <!-- Иконки для PWA (должны быть в корне проекта) -->
+  <!-- Иконки для PWA -->
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-180x180.png">
   <link rel="icon" type="image/png" href="icons/favicon-32x32.png">
   
-  <!-- Splash Screen для iOS -->
-  <link rel="apple-touch-startup-image" href="icons/splash.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)">
-  
   <style>
-    /* Ваши стили остаются без изменений */
     :root {
       --primary: #6a1b9a;
       --primary-dark: #4a148c;
-      /* ... остальные стили ... */
+      --primary-light: #9c27b0;
+      --accent: #ff9800;
+      --text: #ffffff;
+      --bg: #121212;
+      --card-bg: #1e1e1e;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #app {
+      max-width: 800px;
+      margin: 0 auto;
+      width: 100%;
+      padding: 20px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.8rem;
+      color: white;
+    }
+
+    #status {
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .online { background: rgba(46, 125, 50, 0.2); color: #a5d6a7; }
+    .offline { background: rgba(198, 40, 40, 0.2); color: #ef9a9a; }
+    .loading { background: rgba(255, 167, 38, 0.2); color: #ffe0b2; }
+
+    #messages {
+      flex: 1;
+      overflow-y: auto;
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message {
+      background: rgba(106, 27, 154, 0.3);
+      padding: 12px 16px;
+      border-radius: 8px;
+      border-left: 4px solid var(--accent);
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .message-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 0.9rem;
+    }
+
+    .username {
+      font-weight: bold;
+      color: var(--accent);
+    }
+
+    .timestamp {
+      color: rgba(255,255,255,0.6);
+      font-size: 0.8rem;
+    }
+
+    #messageForm {
+      display: flex;
+      gap: 10px;
+      margin-top: auto;
+    }
+
+    #messageInput {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      background: var(--card-bg);
+      color: white;
+      font-size: 1rem;
+    }
+
+    #messageInput:focus {
+      outline: 2px solid var(--accent);
+    }
+
+    #sendButton {
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 0 24px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    #sendButton:hover {
+      background: var(--primary-light);
+    }
+
+    #sendButton:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+
+    @media (max-width: 600px) {
+      #app {
+        padding: 12px;
+      }
+      
+      header {
+        padding: 16px;
+      }
+      
+      #messageForm {
+        flex-direction: column;
+      }
+      
+      #sendButton {
+        padding: 12px;
+        width: 100%;
+      }
     }
   </style>
 </head>
 <body>
-  <!-- Ваш HTML-код остаётся без изменений -->
   <div id="app">
-    <!-- ... -->
+    <header>
+      <h1>MiresHabar</h1>
+    </header>
+
+    <div id="status" class="loading">Подключение к серверу...</div>
+    
+    <div id="messages"></div>
+    
+    <form id="messageForm">
+      <input type="text" id="messageInput" placeholder="Напишите сообщение..." required>
+      <button type="submit" id="sendButton" disabled>Отправить</button>
+    </form>
   </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
+  <script>
+    // Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyAmRBqxgDcPQDIObFLR5wGM2DbYkaFjkkg",
+      authDomain: "test-50b35.firebaseapp.com",
+      databaseURL: "https://test-50b35-default-rtdb.firebaseio.com",
+      projectId: "test-50b35",
+      storageBucket: "test-50b35.appspot.com",
+      messagingSenderId: "130001282916",
+      appId: "1:130001282916:web:260ac627751eb91c23bc71",
+      measurementId: "G-QPB5RMS1GR"
+    };
+
+    // Initialize Firebase
+    try {
+      firebase.initializeApp(firebaseConfig);
+      console.log("Firebase initialized");
+      
+      const auth = firebase.auth();
+      const database = firebase.database();
+      
+      const messagesDiv = document.getElementById('messages');
+      const messageForm = document.getElementById('messageForm');
+      const messageInput = document.getElementById('messageInput');
+      const sendButton = document.getElementById('sendButton');
+      const statusDiv = document.getElementById('status');
+
+      function updateStatus(text, status) {
+        statusDiv.textContent = text;
+        statusDiv.className = status;
+      }
+
+      function formatTime(timestamp) {
+        if (!timestamp) return '';
+        const date = new Date(timestamp);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      }
+
+      auth.signInAnonymously()
+        .then((userCredential) => {
+          console.log("Signed in anonymously");
+          updateStatus("✓ Подключено к серверу", "online");
+          sendButton.disabled = false;
+          messageInput.focus();
+          
+          database.ref('messages')
+            .orderByChild('timestamp')
+            .limitToLast(50)
+            .on('child_added', (snapshot) => {
+              const message = snapshot.val();
+              displayMessage(message);
+            });
+        })
+        .catch((error) => {
+          console.error("Auth error:", error);
+          updateStatus("✗ Ошибка подключения", "offline");
+        });
+
+      function displayMessage(message) {
+        const messageElement = document.createElement('div');
+        messageElement.className = 'message';
+        messageElement.innerHTML = `
+          <div class="message-header">
+            <span class="username">${message.username || 'Гость'}</span>
+            <span class="timestamp">${formatTime(message.timestamp)}</span>
+          </div>
+          <div class="message-text">${message.text}</div>
+        `;
+        messagesDiv.appendChild(messageElement);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      }
+
+      messageForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const messageText = messageInput.value.trim();
+        if (!messageText) return;
+        
+        try {
+          sendButton.disabled = true;
+          
+          if (!auth.currentUser) {
+            await auth.signInAnonymously();
+          }
+          
+          await database.ref('messages').push({
+            text: messageText,
+            timestamp: firebase.database.ServerValue.TIMESTAMP,
+            userId: auth.currentUser.uid,
+            username: `Гость_${auth.currentUser.uid.slice(0, 4)}`
+          });
+          
+          messageInput.value = '';
+        } catch (error) {
+          console.error("Send error:", error);
+          updateStatus("✗ Ошибка отправки", "offline");
+        } finally {
+          sendButton.disabled = false;
+        }
+      });
+
+      database.ref('.info/connected').on('value', (snapshot) => {
+        if (snapshot.val() === true) {
+          updateStatus("✓ Подключено к серверу", "online");
+          sendButton.disabled = false;
+        } else {
+          updateStatus("⌛ Нет соединения", "offline");
+          sendButton.disabled = true;
+        }
+      });
+
+      // Регистрация Service Worker
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('ServiceWorker зарегистрирован:', registration.scope);
+            })
+            .catch(error => {
+              console.log('Ошибка регистрации ServiceWorker:', error);
+            });
+        });
+      }
+
+    } catch (error) {
+      console.error("Initialization error:", error);
+      document.getElementById('status').textContent = "Ошибка инициализации";
+    }
+  </script>
 </body>
 </html>
