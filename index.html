@@ -1,58 +1,86 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Тихон Гаванев | Поэтический мир</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Raleway:wght@300;400&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firebase Clicker Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+    }
+    #score {
+      font-size: 24px;
+      margin: 20px;
+    }
+  </style>
 </head>
 <body>
-    <header class="main-header">
-        <div class="header-content">
-            <h1>Тихон Гаванев</h1>
-            <p class="subtitle">Поэтический мир</p>
-        </div>
-        <nav class="main-nav">
-            <ul>
-                <li><a href="index.html" class="active">Главная</a></li>
-                <li><a href="poems.html">Стихи</a></li>
-                <li><a href="about.html">О поэте</a></li>
-            </ul>
-        </nav>
-    </header>
+  <h1>Firebase Clicker Game</h1>
+  <div id="score">Score: 0</div>
+  <button id="clickBtn">Click Me!</button>
+  <div id="leaderboard"></div>
 
-    <main class="container">
-        <section class="featured-poem">
-            <h2>Избранное стихотворение</h2>
-            <div class="poem-card">
-                <h3>И ветер мыслей...</h3>
-                <div class="poem-text">
-                    <p>И ветер мыслей разум мой уносит -</p>
-                    <p>Стихами выразиться просит..</p>
-                    <p>Я не поэт и не писатель,</p>
-                    <p>Лишь просвещения искатель...</p>
-                </div>
-                <a href="poems.html" class="read-more">Читать все стихи →</a>
-            </div>
-        </section>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
-        <section class="stats">
-            <div class="stat-item">
-                <span class="stat-number">13</span>
-                <span class="stat-label">Произведений</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-number">1,337</span>
-                <span class="stat-label">Читателей</span>
-            </div>
-        </section>
-    </main>
+  <script>
+    // Конфигурация Firebase (замени на свою!)
+    const firebaseConfig = {
+      apiKey: "ВАШ_API_KEY",
+      authDomain: "ВАШ_PROJECT_ID.firebaseapp.com",
+      databaseURL: "https://ВАШ_PROJECT_ID.firebaseio.com",
+      projectId: "ВАШ_PROJECT_ID",
+      storageBucket: "ВАШ_PROJECT_ID.appspot.com",
+      messagingSenderId: "ВАШ_SENDER_ID",
+      appId: "ВАШ_APP_ID"
+    };
 
-    <footer class="main-footer">
-        <p>© 2025 Тихон Гаванев. Все права сохранены.</p>
-    </footer>
+    // Инициализация Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
 
-    <script src="script.js"></script>
+    // Переменные игры
+    let score = 0;
+    const clickBtn = document.getElementById("clickBtn");
+    const scoreDisplay = document.getElementById("score");
+    const leaderboard = document.getElementById("leaderboard");
+
+    // Загрузка счета из Firebase
+    database.ref('score').on('value', (snapshot) => {
+      score = snapshot.val() || 0;
+      scoreDisplay.textContent = `Score: ${score}`;
+    });
+
+    // Обработчик клика
+    clickBtn.addEventListener("click", () => {
+      score++;
+      scoreDisplay.textContent = `Score: ${score}`;
+      // Сохраняем счет в Firebase
+      database.ref('score').set(score);
+    });
+
+    // Лидерборд (дополнительно)
+    database.ref('leaderboard').push().set({
+      player: "Player1",
+      score: score
+    });
+
+    database.ref('leaderboard').on('child_added', (snapshot) => {
+      const data = snapshot.val();
+      leaderboard.innerHTML += `<p>${data.player}: ${data.score}</p>`;
+    });
+  </script>
 </body>
 </html>
