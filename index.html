@@ -51,11 +51,11 @@
     <div id="scoresList"></div>
   </div>
 
-  <!-- Firebase SDK (compat version for easier deployment) -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+  <!-- Firebase SDK (версия 9+ через CDN) -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, set, onValue, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-  <script>
     // Ваша конфигурация Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyAmRBqxgDcPQDIObFLR5wGM2DbYkaFjkkg",
@@ -69,8 +69,8 @@
     };
 
     // Инициализация Firebase
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
 
     // Переменные игры
     let score = 0;
@@ -82,8 +82,12 @@
     // Генерация случайного имени игрока
     const playerName = "Player_" + Math.floor(Math.random() * 1000);
 
+    // Ссылки на данные в Firebase
+    const scoreRef = ref(db, 'currentScore');
+    const leaderboardRef = ref(db, 'leaderboard');
+
     // Загрузка счета из Firebase
-    database.ref('score').on('value', (snapshot) => {
+    onValue(scoreRef, (snapshot) => {
       score = snapshot.val() || 0;
       scoreDisplay.textContent = `Score: ${score}`;
     });
@@ -91,26 +95,25 @@
     // Обработчик клика
     clickBtn.addEventListener("click", () => {
       score++;
-      scoreDisplay.textContent = `Score: ${score}`;
-      // Сохраняем счет в Firebase
-      database.ref('score').set(score);
+      // Сохраняем текущий счет
+      set(scoreRef, score);
       
       // Добавляем запись в таблицу лидеров
-      database.ref('leaderboard').push().set({
+      push(leaderboardRef, {
         player: playerName,
         score: score,
-        timestamp: firebase.database.ServerValue.TIMESTAMP
+        timestamp: serverTimestamp()
       });
     });
 
     // Обработчик сброса счета
     resetBtn.addEventListener("click", () => {
       score = 0;
-      database.ref('score').set(0);
+      set(scoreRef, 0);
     });
 
     // Отображение таблицы лидеров
-    database.ref('leaderboard').orderByChild('timestamp').limitToLast(10).on('value', (snapshot) => {
+    onValue(leaderboardRef, (snapshot) => {
       scoresList.innerHTML = '';
       const leaderboardData = [];
       
@@ -119,7 +122,7 @@
       });
       
       // Сортируем по убыванию счета
-      leaderboardData.sort((a, b) => b.score - a.score);
+      leaderboardData.sort((a, b) => (b.score || 0) - (a.score || 0));
       
       // Отображаем топ-10
       leaderboardData.slice(0, 10).forEach((entry) => {
