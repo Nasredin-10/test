@@ -1,22 +1,20 @@
-const CACHE_NAME = 'mireshabar-v1';
-const ASSETS = [
+const CACHE_NAME = 'prayer-times-v1';
+const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/manifest.json',
-  '/ios/images/icon-192x192.png',
-  '/ios/images/icon-512x512.png'
+  'https://img.icons8.com/ios/512/islamic/prayer.png'
 ];
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(
+self.addEventListener('install', (event) => {
+  event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(ASSETS))
+      .then(cache => cache.addAll(ASSETS_TO_CACHE))
   );
 });
 
-self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request)
-      .then(response => response || fetch(e.request))
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request)
+      .then(response => response || fetch(event.request))
   );
 });
