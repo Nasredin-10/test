@@ -18,10 +18,26 @@
       color: white;
       border: none;
       border-radius: 5px;
+      margin: 10px;
     }
     #score {
       font-size: 24px;
       margin: 20px;
+    }
+    #leaderboard {
+      margin-top: 30px;
+      border-top: 1px solid #ccc;
+      padding-top: 20px;
+      max-width: 400px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+    }
+    .player-score {
+      margin: 5px 0;
+      padding: 5px;
+      background: #f5f5f5;
+      border-radius: 3px;
     }
   </style>
 </head>
@@ -29,22 +45,27 @@
   <h1>Firebase Clicker Game</h1>
   <div id="score">Score: 0</div>
   <button id="clickBtn">Click Me!</button>
-  <div id="leaderboard"></div>
+  <button id="resetBtn">Reset Score</button>
+  <div id="leaderboard">
+    <h3>Leaderboard</h3>
+    <div id="scoresList"></div>
+  </div>
 
-  <!-- Firebase SDK -->
+  <!-- Firebase SDK (compat version for easier deployment) -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
 
   <script>
-    // Конфигурация Firebase (замени на свою!)
+    // Ваша конфигурация Firebase
     const firebaseConfig = {
-      apiKey: "ВАШ_API_KEY",
-      authDomain: "ВАШ_PROJECT_ID.firebaseapp.com",
-      databaseURL: "https://ВАШ_PROJECT_ID.firebaseio.com",
-      projectId: "ВАШ_PROJECT_ID",
-      storageBucket: "ВАШ_PROJECT_ID.appspot.com",
-      messagingSenderId: "ВАШ_SENDER_ID",
-      appId: "ВАШ_APP_ID"
+      apiKey: "AIzaSyAmRBqxgDcPQDIObFLR5wGM2DbYkaFjkkg",
+      authDomain: "test-50b35.firebaseapp.com",
+      databaseURL: "https://test-50b35-default-rtdb.firebaseio.com",
+      projectId: "test-50b35",
+      storageBucket: "test-50b35.appspot.com",
+      messagingSenderId: "130001282916",
+      appId: "1:130001282916:web:260ac627751eb91c23bc71",
+      measurementId: "G-QPB5RMS1GR"
     };
 
     // Инициализация Firebase
@@ -54,8 +75,12 @@
     // Переменные игры
     let score = 0;
     const clickBtn = document.getElementById("clickBtn");
+    const resetBtn = document.getElementById("resetBtn");
     const scoreDisplay = document.getElementById("score");
-    const leaderboard = document.getElementById("leaderboard");
+    const scoresList = document.getElementById("scoresList");
+    
+    // Генерация случайного имени игрока
+    const playerName = "Player_" + Math.floor(Math.random() * 1000);
 
     // Загрузка счета из Firebase
     database.ref('score').on('value', (snapshot) => {
@@ -69,17 +94,40 @@
       scoreDisplay.textContent = `Score: ${score}`;
       // Сохраняем счет в Firebase
       database.ref('score').set(score);
+      
+      // Добавляем запись в таблицу лидеров
+      database.ref('leaderboard').push().set({
+        player: playerName,
+        score: score,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+      });
     });
 
-    // Лидерборд (дополнительно)
-    database.ref('leaderboard').push().set({
-      player: "Player1",
-      score: score
+    // Обработчик сброса счета
+    resetBtn.addEventListener("click", () => {
+      score = 0;
+      database.ref('score').set(0);
     });
 
-    database.ref('leaderboard').on('child_added', (snapshot) => {
-      const data = snapshot.val();
-      leaderboard.innerHTML += `<p>${data.player}: ${data.score}</p>`;
+    // Отображение таблицы лидеров
+    database.ref('leaderboard').orderByChild('timestamp').limitToLast(10).on('value', (snapshot) => {
+      scoresList.innerHTML = '';
+      const leaderboardData = [];
+      
+      snapshot.forEach((childSnapshot) => {
+        leaderboardData.push(childSnapshot.val());
+      });
+      
+      // Сортируем по убыванию счета
+      leaderboardData.sort((a, b) => b.score - a.score);
+      
+      // Отображаем топ-10
+      leaderboardData.slice(0, 10).forEach((entry) => {
+        const scoreElement = document.createElement('div');
+        scoreElement.className = 'player-score';
+        scoreElement.textContent = `${entry.player}: ${entry.score}`;
+        scoresList.appendChild(scoreElement);
+      });
     });
   </script>
 </body>
