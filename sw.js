@@ -2,9 +2,9 @@ const CACHE_NAME = 'mireshabar-v1';
 const ASSETS = [
   '/',
   '/index.html',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  '/manifest.json'
+  '/manifest.json',
+  '/ios/images/icon-192x192.png',
+  '/ios/images/icon-512x512.png'
 ];
 
 self.addEventListener('install', (e) => {
