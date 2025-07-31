@@ -1,61 +1,62 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Firebase Clicker Game</title>
+  <title>Простой мессенджер</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      text-align: center;
-      margin-top: 50px;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    #messages {
+      height: 300px;
+      border: 1px solid #ddd;
+      padding: 10px;
+      overflow-y: scroll;
+      margin-bottom: 10px;
+    }
+    #messageForm {
+      display: flex;
+    }
+    #messageInput {
+      flex-grow: 1;
+      padding: 8px;
     }
     button {
-      padding: 10px 20px;
-      font-size: 18px;
-      cursor: pointer;
+      padding: 8px 15px;
       background-color: #4CAF50;
       color: white;
       border: none;
-      border-radius: 5px;
-      margin: 10px;
+      cursor: pointer;
     }
-    #score {
-      font-size: 24px;
-      margin: 20px;
-    }
-    #leaderboard {
-      margin-top: 30px;
-      border-top: 1px solid #ccc;
-      padding-top: 20px;
-      max-width: 400px;
-      margin-left: auto;
-      margin-right: auto;
-      text-align: left;
-    }
-    .player-score {
-      margin: 5px 0;
+    .message {
+      margin-bottom: 10px;
       padding: 5px;
-      background: #f5f5f5;
-      border-radius: 3px;
+      border-bottom: 1px solid #eee;
+    }
+    .username {
+      font-weight: bold;
+      color: #4CAF50;
     }
   </style>
 </head>
 <body>
-  <h1>Firebase Clicker Game</h1>
-  <div id="score">Score: 0</div>
-  <button id="clickBtn">Click Me!</button>
-  <button id="resetBtn">Reset Score</button>
-  <div id="leaderboard">
-    <h3>Leaderboard</h3>
-    <div id="scoresList"></div>
-  </div>
+  <h1>Простой мессенджер</h1>
+  <div id="messages"></div>
+  <form id="messageForm">
+    <input type="text" id="messageInput" placeholder="Введите сообщение..." required>
+    <button type="submit">Отправить</button>
+  </form>
 
-  <!-- Firebase SDK (версия 9+ через CDN) -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, set, onValue, push, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
+  <script>
     // Ваша конфигурация Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyAmRBqxgDcPQDIObFLR5wGM2DbYkaFjkkg",
@@ -69,69 +70,60 @@
     };
 
     // Инициализация Firebase
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+    const auth = firebase.auth();
 
-    // Переменные игры
-    let score = 0;
-    const clickBtn = document.getElementById("clickBtn");
-    const resetBtn = document.getElementById("resetBtn");
-    const scoreDisplay = document.getElementById("score");
-    const scoresList = document.getElementById("scoresList");
-    
-    // Генерация случайного имени игрока
-    const playerName = "Player_" + Math.floor(Math.random() * 1000);
+    // Элементы интерфейса
+    const messagesDiv = document.getElementById('messages');
+    const messageForm = document.getElementById('messageForm');
+    const messageInput = document.getElementById('messageInput');
 
-    // Ссылки на данные в Firebase
-    const scoreRef = ref(db, 'currentScore');
-    const leaderboardRef = ref(db, 'leaderboard');
-
-    // Загрузка счета из Firebase
-    onValue(scoreRef, (snapshot) => {
-      score = snapshot.val() || 0;
-      scoreDisplay.textContent = `Score: ${score}`;
-    });
-
-    // Обработчик клика
-    clickBtn.addEventListener("click", () => {
-      score++;
-      // Сохраняем текущий счет
-      set(scoreRef, score);
-      
-      // Добавляем запись в таблицу лидеров
-      push(leaderboardRef, {
-        player: playerName,
-        score: score,
-        timestamp: serverTimestamp()
+    // Анонимная авторизация
+    auth.signInAnonymously()
+      .then(() => {
+        console.log("Вошел анонимно");
+      })
+      .catch((error) => {
+        console.error("Ошибка авторизации:", error);
       });
+
+    // Отправка сообщения
+    messageForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      if (messageInput.value.trim() === '') return;
+      
+      const user = auth.currentUser;
+      if (user) {
+        database.ref('messages').push({
+          text: messageInput.value,
+          timestamp: firebase.database.ServerValue.TIMESTAMP,
+          userId: user.uid,
+          username: `User_${user.uid.substring(0, 4)}` // Генерируем короткое имя
+        });
+        
+        messageInput.value = '';
+      }
     });
 
-    // Обработчик сброса счета
-    resetBtn.addEventListener("click", () => {
-      score = 0;
-      set(scoreRef, 0);
+    // Получение сообщений в реальном времени
+    database.ref('messages').orderByChild('timestamp').limitToLast(50).on('child_added', (snapshot) => {
+      const message = snapshot.val();
+      displayMessage(message);
     });
 
-    // Отображение таблицы лидеров
-    onValue(leaderboardRef, (snapshot) => {
-      scoresList.innerHTML = '';
-      const leaderboardData = [];
-      
-      snapshot.forEach((childSnapshot) => {
-        leaderboardData.push(childSnapshot.val());
-      });
-      
-      // Сортируем по убыванию счета
-      leaderboardData.sort((a, b) => (b.score || 0) - (a.score || 0));
-      
-      // Отображаем топ-10
-      leaderboardData.slice(0, 10).forEach((entry) => {
-        const scoreElement = document.createElement('div');
-        scoreElement.className = 'player-score';
-        scoreElement.textContent = `${entry.player}: ${entry.score}`;
-        scoresList.appendChild(scoreElement);
-      });
-    });
+    // Отображение сообщения
+    function displayMessage(message) {
+      const messageElement = document.createElement('div');
+      messageElement.className = 'message';
+      messageElement.innerHTML = `
+        <span class="username">${message.username}:</span>
+        <span class="text">${message.text}</span>
+      `;
+      messagesDiv.appendChild(messageElement);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
   </script>
 </body>
 </html>
